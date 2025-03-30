@@ -1,27 +1,36 @@
-### Dockerfile.master (ARM64 + kubelet + Neovim + LunarVim with nodejs/cargo 지원)
-
 FROM registry.access.redhat.com/ubi9/ubi
 
 ENV container=docker
+# ----------------------------------------
+# oh-my-zsh ENV
+# 필요하지 않으면 주석 처리하세요
+# ----------------------------------------
 ENV ZSH_CUSTOM=/root/.oh-my-zsh/custom
 ENV PATH="/root/.cargo/bin:${PATH}"
 
+# ----------------------------------------
 # 필수 시스템 도구 설치
+# ----------------------------------------
 RUN dnf update -y && \
     dnf install -y \
         yum-utils device-mapper-persistent-data lvm2 \
         zsh git \
-        systemd sudo shadow-utils tar && \
+        systemd sudo shadow-utils tar \
+        procps-ng man-db man-pages less && \
     dnf clean all
 
-# --- Kubernetes 바이너리 수동 설치 (ARM64) ---
+# ----------------------------------------
+# Kubernetes 바이너리 설치 (ARM64)
+# ----------------------------------------
 RUN curl -LO https://dl.k8s.io/release/v1.29.3/bin/linux/arm64/kubeadm && \
     curl -LO https://dl.k8s.io/release/v1.29.3/bin/linux/arm64/kubectl && \
     curl -LO https://dl.k8s.io/release/v1.29.3/bin/linux/arm64/kubelet && \
     chmod +x kubeadm kubectl kubelet && \
     mv kubeadm kubectl kubelet /usr/bin/
 
-# --- kubelet systemd 서비스 등록 ---
+# ----------------------------------------
+# kubelet systemd 서비스 등록
+# ----------------------------------------
 RUN mkdir -p /etc/systemd/system/kubelet.service.d && \
     cat <<EOF > /etc/systemd/system/kubelet.service
 [Unit]
@@ -39,9 +48,12 @@ RestartSec=10
 WantedBy=multi-user.target
 EOF
 
-# --- containerd 수동 설치 (ARM64) ---
+# ----------------------------------------
+# containerd 설치 및 서비스 등록
+# ----------------------------------------
 RUN curl -L https://github.com/containerd/containerd/releases/download/v1.7.13/containerd-1.7.13-linux-arm64.tar.gz | \
-    tar -C /usr/local -xz
+    tar -C /usr/local -xz && \
+    ln -s /usr/local/bin/containerd /usr/bin/containerd
 
 RUN cat <<EOF > /usr/lib/systemd/system/containerd.service
 [Unit]
@@ -63,30 +75,58 @@ LimitCORE=infinity
 WantedBy=multi-user.target
 EOF
 
-# --- Neovim 설치 (공식 ARM64 빌드) ---
+# ----------------------------------------
+# Neovim 설치 (공식 ARM64)
+# 필요하지 않으면 주석 처리하세요
+# ----------------------------------------
 RUN curl -LO https://github.com/neovim/neovim/releases/download/stable/nvim-linux-arm64.tar.gz && \
     tar xzf nvim-linux-arm64.tar.gz && \
     mv nvim-linux-arm64 /opt/ && \
     ln -s /opt/nvim-linux-arm64/bin/nvim /usr/local/bin/nvim
 
-# LunarVim 설치 의존성
+# ----------------------------------------
+# LunarVim 설치 의존성 (Rust, Node.js 등)
+# 필요하지 않으면 주석 처리하세요
+# ----------------------------------------
 RUN dnf install -y nodejs npm gcc make glibc-devel && \
     curl https://sh.rustup.rs -sSf | sh -s -- -y
 
+# ----------------------------------------
 # oh-my-zsh 및 LunarVim 설치
+# 필요하지 않으면 주석 처리하세요
+# ----------------------------------------
 RUN sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended && \
     git clone https://github.com/zsh-users/zsh-autosuggestions.git $ZSH_CUSTOM/plugins/zsh-autosuggestions && \
     bash -c "$(curl -s https://raw.githubusercontent.com/lunarvim/lunarvim/master/utils/installer/install.sh)" -- -y --nvim-path /usr/local/bin/nvim
 
+# ----------------------------------------
+# oh-my-zsh 외부 플러그인 및 테마 설치
+# 필요하지 않으면 주석 처리하세요
+# ----------------------------------------
+RUN git clone https://github.com/zsh-users/zsh-syntax-highlighting.git $ZSH_CUSTOM/plugins/zsh-syntax-highlighting && \
+    git clone https://github.com/zsh-users/zsh-completions $ZSH_CUSTOM/plugins/zsh-completions && \
+    git clone https://github.com/changyuheng/zsh-interactive-cd.git $ZSH_CUSTOM/plugins/zsh-interactive-cd && \
+    git clone https://github.com/1Password/1password-omz.git $ZSH_CUSTOM/plugins/1password && \
+    git clone --depth=1 https://github.com/romkatv/powerlevel10k.git $ZSH_CUSTOM/themes/powerlevel10k
+
+# ----------------------------------------
 # 설정 파일 복사 및 권한 설정
+# 필요하지 않으면 주석 처리하세요
+# ----------------------------------------
+RUN mkdir -p /root/.config/lvim
 COPY config.lua /root/.config/lvim/config.lua
 COPY .zshrc /root/.zshrc
 RUN chown root:root /root/.zshrc
 
+# ----------------------------------------
+# 캐시 정리
+# ----------------------------------------
 RUN dnf clean all && \
     rm -rf /var/cache/dnf /var/cache/yum /tmp/*
 
-# systemd 설정
+# ----------------------------------------
+# systemd 실행 설정
+# ----------------------------------------
 VOLUME ["/sys/fs/cgroup"]
 STOPSIGNAL SIGRTMIN+3
 CMD ["/sbin/init"]

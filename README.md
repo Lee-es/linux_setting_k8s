@@ -1,4 +1,16 @@
-# K8S 도커기반 환경 구성 매뉴얼
+# K8S 도커 컨테이너기반 수동 K8S 환경 구성 매뉴얼
+
+> 개발환경 
+
+  | 항목 | 내용 |
+  | :---: | :---: |
+  Device | ***MacBook Pro***
+  Chip | **Apple M2 Max**
+  OS | **MacOS Sequoia 15.4**
+  Arch | **ARM64 (Apple Silicon)**
+
+
+
 ---
 ### 1. Docker 네트워크 생성
 
@@ -70,7 +82,7 @@ docker run -d --name k8s-master \
     --privileged \
     --network k8s-net \
     --ip 192.168.100.240 \
-    -v /sys/fs/cgroup:/sys/fs/cgroup:ro \
+    -v /sys/fs/cgroup:/sys/fs/cgroup \
     redhat-k8s-master
 ```
 
@@ -81,7 +93,7 @@ docker run -d --name k8s-worker1 \
     --privileged \
     --network k8s-net \
     --ip 192.168.100.241 \
-    -v /sys/fs/cgroup:/sys/fs/cgroup:ro \
+    -v /sys/fs/cgroup:/sys/fs/cgroup \
     redhat-k8s-work
 ```
 
