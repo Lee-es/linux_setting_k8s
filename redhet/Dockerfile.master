@@ -1,0 +1,54 @@
+### Dockerfile.master
+
+# Red Hat UBI9 기반 Kubernetes 마스터 노드용 Dockerfile
+FROM registry.access.redhat.com/ubi9/ubi
+
+# 컨테이너 환경에서 systemd를 사용할 수 있도록 지정
+ENV container docker
+
+# 시스템 필수 패키지 설치
+# - systemd: Kubernetes 데몬을 관리하기 위한 init 시스템
+# - containerd: 컨테이너 런타임 (kubelet이 사용하는 런타임)
+# - sudo, shadow-utils: 사용자 권한 제어용
+# - 개발 도구: neovim, zsh, git, curl 등
+# - epel-release: UBI에 없는 추가 패키지를 위한 저장소
+RUN dnf update -y && \
+    dnf install -y epel-release && \
+    dnf install -y \
+        yum-utils device-mapper-persistent-data lvm2 \
+        zsh curl git neovim \
+        systemd containerd sudo shadow-utils && \
+    dnf clean all
+
+# Kubernetes 저장소 구성 (RHEL9에 맞는 저장소)
+RUN cat <<EOF > /etc/yum.repos.d/kubernetes.repo
+[kubernetes]
+name=Kubernetes
+baseurl=https://packages.cloud.google.com/yum/repos/kubernetes-el9-\$basearch
+enabled=1
+gpgcheck=1
+repo_gpgcheck=1
+gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
+EOF
+
+# Kubernetes 구성 요소 설치
+RUN dnf install -y kubelet kubeadm kubectl && \
+    dnf clean all
+
+# 개발자 편의성 도구 설치 (선택적 구성)
+# - oh-my-zsh: zsh 사용자 환경 향상
+# - LunarVim: 개발용 Vim 환경
+RUN sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended && \
+    git clone https://github.com/zsh-users/zsh-autosuggestions.git /root/.oh-my-zsh/plugins/zsh-autosuggestions && \
+    bash -c "$(curl -s https://raw.githubusercontent.com/lunarvim/lunarvim/master/utils/installer/install.sh)" -- -y
+
+# LunarVim 및 zsh 설정 파일 복사
+COPY config.lua /root/.config/lvim/config.lua
+COPY .zshrc /root/.zshrc
+
+# systemd 실행을 위한 볼륨 및 종료 시그널 설정
+VOLUME ["/sys/fs/cgroup"]
+STOPSIGNAL SIGRTMIN+3
+
+# systemd를 기본 프로세스로 실행
+CMD ["/sbin/init"]

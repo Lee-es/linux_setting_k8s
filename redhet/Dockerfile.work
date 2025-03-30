@@ -1,0 +1,42 @@
+### Dockerfile.worker
+
+# Red Hat UBI9 기반 Kubernetes 워커 노드용 Dockerfile
+FROM registry.access.redhat.com/ubi9/ubi
+
+ENV container docker
+
+# 워커 노드용 필수 패키지만 설치 (경량화)
+# - 개발 도구 제외 (LunarVim, neovim 등 제거)
+# - systemd + containerd + kubeadm/kubelet/kubectl 만 구성
+RUN dnf update -y && \
+    dnf install -y epel-release && \
+    dnf install -y \
+        yum-utils device-mapper-persistent-data lvm2 \
+        zsh curl git \
+        systemd containerd sudo shadow-utils && \
+    dnf clean all
+
+# Kubernetes 저장소 구성
+RUN cat <<EOF > /etc/yum.repos.d/kubernetes.repo
+[kubernetes]
+name=Kubernetes
+baseurl=https://packages.cloud.google.com/yum/repos/kubernetes-el9-\$basearch
+enabled=1
+gpgcheck=1
+repo_gpgcheck=1
+gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
+EOF
+
+# Kubernetes 워커 노드 구성 요소 설치
+RUN dnf install -y kubelet kubeadm kubectl && \
+    dnf clean all
+
+# zsh 사용자 설정 복사 (선택)
+COPY .zshrc /root/.zshrc
+
+# systemd를 위한 필수 설정
+VOLUME ["/sys/fs/cgroup"]
+STOPSIGNAL SIGRTMIN+3
+
+# systemd 시작
+CMD ["/sbin/init"]

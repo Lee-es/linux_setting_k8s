@@ -1,0 +1,49 @@
+### Dockerfile.master
+
+# Ubuntu 22.04 이미지를 베이스로 사용
+FROM ubuntu:22.04
+
+# 비대화형 모드 설정 (apt 설치 시 사용자 입력 방지)
+ENV DEBIAN_FRONTEND=noninteractive
+# Docker 컨테이너 내 systemd 실행 명시
+ENV container docker
+
+# 시스템 필수 패키지 및 개발 도구 설치
+# - systemd: 서비스 관리 데몬 (Kubernetes 필수)
+# - containerd: 컨테이너 런타임 (Kubelet 실행에 필요)
+# - zsh, git, neovim: 개발 편의 도구
+# - Kubernetes 설치를 위한 APT 구성 포함
+RUN apt-get update && \
+    apt-get install -y \
+        systemd systemd-sysv dbus sudo \
+        containerd \
+        apt-transport-https ca-certificates curl gnupg2 \
+        software-properties-common zsh git neovim && \
+    curl -fsSL https://packages.cloud.google.com/apt/doc/apt-key.gpg | \
+        gpg --dearmor -o /etc/apt/trusted.gpg.d/kubernetes.gpg && \
+    echo "deb [signed-by=/etc/apt/trusted.gpg.d/kubernetes.gpg] https://apt.kubernetes.io/ kubernetes-xenial main" > \
+        /etc/apt/sources.list.d/kubernetes.list && \
+    apt-get update && \
+    apt-get install -y kubelet kubeadm kubectl && \
+    apt-mark hold kubelet kubeadm kubectl && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# 개발자 쉘 환경 및 LunarVim 설치 (옵션)
+RUN sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended && \
+    git clone https://github.com/zsh-users/zsh-autosuggestions.git /root/.oh-my-zsh/plugins/zsh-autosuggestions && \
+    bash -c "$(curl -s https://raw.githubusercontent.com/lunarvim/lunarvim/master/utils/installer/install.sh)" -- -y
+
+# LunarVim 설정 파일 복사
+COPY config.lua /root/.config/lvim/config.lua
+
+# Zsh 설정 파일 복사
+COPY .zshrc /root/.zshrc
+
+# systemd 사용을 위한 설정
+# - cgroup 마운트를 위한 VOLUME 설정
+# - 정지 시 systemd 종료 시그널 지정
+VOLUME [ "/sys/fs/cgroup" ]
+STOPSIGNAL SIGRTMIN+3
+
+# 컨테이너가 시작될 때 systemd를 init 프로세스로 실행
+CMD ["/sbin/init"]
