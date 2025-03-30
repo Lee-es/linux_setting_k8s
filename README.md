@@ -82,7 +82,7 @@ docker run -d --name k8s-worker1 \
     --network k8s-net \
     --ip 192.168.100.241 \
     -v /sys/fs/cgroup:/sys/fs/cgroup:ro \
-    redhat-k8s-worker
+    redhat-k8s-work
 ```
 
 ---
