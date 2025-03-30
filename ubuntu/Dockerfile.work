@@ -2,10 +2,8 @@ FROM ubuntu:22.04
 
 ENV container=docker
 ENV DEBIAN_FRONTEND=noninteractive
-ENV PATH="/root/.cargo/bin:${PATH}"
-ENV ZSH_CUSTOM=/root/.oh-my-zsh/custom
 
-# 기본 패키지 설치
+# 필수 시스템 도구 설치
 RUN apt-get update && \
     apt-get install -y \
         systemd systemd-sysv dbus sudo \
@@ -13,7 +11,7 @@ RUN apt-get update && \
         iproute2 iptables git zsh tar && \
     apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-# Kubernetes 바이너리 설치
+# Kubernetes 바이너리 수동 설치 (ARM64)
 RUN curl -LO https://dl.k8s.io/release/v1.29.3/bin/linux/arm64/kubeadm && \
     curl -LO https://dl.k8s.io/release/v1.29.3/bin/linux/arm64/kubectl && \
     curl -LO https://dl.k8s.io/release/v1.29.3/bin/linux/arm64/kubelet && \
@@ -25,7 +23,7 @@ RUN mkdir -p /etc/systemd/system/kubelet.service.d && \
     echo '[Unit]\nDescription=Kubernetes Kubelet Server\nDocumentation=https://kubernetes.io/docs/\nAfter=network.target\n\n[Service]\nExecStart=/usr/bin/kubelet\nRestart=always\nStartLimitInterval=0\nRestartSec=10\n\n[Install]\nWantedBy=multi-user.target' \
     > /etc/systemd/system/kubelet.service
 
-# containerd 설치
+# containerd 수동 설치 (ARM64)
 RUN curl -LO https://github.com/containerd/containerd/releases/download/v1.7.13/containerd-1.7.13-linux-arm64.tar.gz && \
     tar -C /usr/local -xzf containerd-1.7.13-linux-arm64.tar.gz && \
     rm containerd-1.7.13-linux-arm64.tar.gz
@@ -34,28 +32,7 @@ RUN curl -LO https://github.com/containerd/containerd/releases/download/v1.7.13/
 RUN echo '[Unit]\nDescription=containerd container runtime\nDocumentation=https://containerd.io\nAfter=network.target\n\n[Service]\nExecStart=/usr/local/bin/containerd\nRestart=always\nDelegate=yes\nKillMode=process\nOOMScoreAdjust=-999\nLimitNOFILE=1048576\nLimitNPROC=infinity\nLimitCORE=infinity\n\n[Install]\nWantedBy=multi-user.target' \
     > /lib/systemd/system/containerd.service
 
-# Neovim 설치
-RUN curl -LO https://github.com/neovim/neovim/releases/download/stable/nvim-linux-arm64.tar.gz && \
-    tar xzf nvim-linux-arm64.tar.gz && \
-    mv nvim-linux-arm64 /opt/ && \
-    ln -s /opt/nvim-linux-arm64/bin/nvim /usr/local/bin/nvim && \
-    rm nvim-linux-arm64.tar.gz
-
-# Node.js 설치 (NodeSource + apt-get update 추가)
-RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && \
-    apt-get update && \
-    apt-get install -y nodejs gcc make && \
-    curl https://sh.rustup.rs -sSf | sh -s -- -y && \
-    apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
-
-# oh-my-zsh + LunarVim 설치
-RUN sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended && \
-    git clone https://github.com/zsh-users/zsh-autosuggestions.git $ZSH_CUSTOM/plugins/zsh-autosuggestions && \
-    bash -c "$(curl -s https://raw.githubusercontent.com/lunarvim/lunarvim/master/utils/installer/install.sh)" -- -y --nvim-path /usr/local/bin/nvim
-
-COPY config.lua /root/.config/lvim/config.lua
-COPY .zshrc /root/.zshrc
-
+# systemd 설정
 VOLUME ["/sys/fs/cgroup"]
 STOPSIGNAL SIGRTMIN+3
 CMD ["/lib/systemd/systemd"]

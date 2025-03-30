@@ -80,13 +80,13 @@ export ZSH="$HOME/.oh-my-zsh"
 plugins=(
         git
         aliases
+        1password
+        zsh-interactive-cd
         zsh-autosuggestions
         zsh-syntax-highlighting
-        zsh-interactive-cd
-        1password
 )
 
-[[ -d "$ZSH" ]] && source $ZSH/oh-my-zsh.sh
+source $ZSH/oh-my-zsh.sh
 
 # keybinds
 bindkey '^ ' autosuggest-accept
@@ -107,14 +107,12 @@ HISTFILE=~/.zsh_history
 
 export PATH="$HOME/.bin":$PATH
 # export EDITOR=/usr/local/bin/nvim
-export EDITOR=nvim
-[[ -z "$DISPLAY" ]] && export DISPLAY=:0
+export EDITOR=vi
+export DISPLAY=:0
 
 # LunarVim을 사용하지 않는다면 다음 줄 주석 
-command -v lvim &>/dev/null && {
-  alias vim='lvim'
-  alias vi='lvim'
-}
+alias vim='lvim'
+alias vi='lvim'
 
 
 alias zshconfig="vi ~/.zshrc"
@@ -159,5 +157,4 @@ alias gcM='git commit -m'
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
 
 
-[[ -f ~/.oh-my-zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh ]] && \
-    source ~/.oh-my-zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
+source ~/.oh-my-zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh

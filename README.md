@@ -21,29 +21,37 @@ docker network create \
 ### 2. Docker 이미지 Build
 1. Ubuntu
    
-   - master-node
+- master-node
      
 ```bash
-     docker build -f ubuntu/Dockerfile.master -t ubuntu-k8s-master .
+docker buildx build --platform linux/arm64 \
+  -f ubuntu/Dockerfile.master \
+  -t ubuntu-k8s-master .
 ```
    
-   - work-node
+- work-node
      
 ```bash
-     docker build -f ubuntu/Dockerfile.work -t ubuntu-k8s-work .
+docker buildx build --platform linux/arm64 \
+  -f ubuntu/Dockerfile.work \
+  -t ubuntu-k8s-work .
 ```
 2. Redhat
    
-   - master-node
+- master-node
      
 ```bash
-     docker build -f redhat/Dockerfile.master -t redhat-k8s-master .
+docker buildx build --platform linux/arm64 \
+  -f redhat/Dockerfile.master \
+  -t redhat-k8s-master .
 ```
    
-   - work-node
+- work-node
      
 ```bash
-     docker build -f redhat/Dockerfile.work -t redhat-k8s-work .
+docker buildx build --platform linux/arm64 \
+  -f redhat/Dockerfile.work \
+  -t redhat-k8s-work .
 ```
 
 ---
