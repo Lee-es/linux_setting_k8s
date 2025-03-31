@@ -28,7 +28,6 @@ plugins=(
   zsh-autosuggestions
   zsh-syntax-highlighting
   zsh-interactive-cd
-  1password
   zsh-completions
 )
 
