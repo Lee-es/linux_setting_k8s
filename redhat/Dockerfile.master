@@ -10,13 +10,14 @@ ENV PATH="/root/.cargo/bin:${PATH}"
 
 # ----------------------------------------
 # 필수 시스템 도구 설치
+# man-pages 기본 레포지토리 없어서 삭제
 # ----------------------------------------
 RUN dnf update -y && \
     dnf install -y \
         yum-utils device-mapper-persistent-data lvm2 \
         zsh git \
         systemd sudo shadow-utils tar \
-        procps-ng man-db man-pages less && \
+        procps-ng man-db less && \
     dnf clean all
 
 # ----------------------------------------

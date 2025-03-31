@@ -1,6 +1,16 @@
-# K8S 도커 컨테이너기반 수동 K8S 환경 구성 매뉴얼
+# Docker 기반 수동 Kubernetes 클러스터 구성 가이드 (ARM64 Mac)
 
-> 개발환경 
+이 문서는 Apple Silicon 기반 macOS 환경에서 Kubernetes 학습을 위해 Docker 컨테이너 기반의 마스터/워커 노드를 구성하는 방법을 정리한 실습 매뉴얼입니다.
+
+---
+> **사전 준비 사항**
+- Apple Silicon(M1/M2) 기반의 macOS 환경
+- Docker Desktop 설치 및 실행 중
+- Docker buildx 및 `kubeadm`, `kubectl` 등 K8s 기본 명령어 이해
+
+---
+
+> ## 개발 환경
 
   | 항목 | 내용 |
   | :---: | :---: |
@@ -9,7 +19,9 @@
   OS | **MacOS Sequoia 15.4**
   Arch | **ARM64 (Apple Silicon)**
 
-
+> 실습 중 동일한 로컬 터미널 사용을 위해 Master-Node에 다음 툴을 설치합니다. (선택 사항)
+  - `oh-my-zsh`: 사용자 친화적인 ZSH 쉘 환경
+  - `LunarVim`: Neovim 기반의 경량 코드 편집기 (YAML에 적합)
 
 ---
 ### 1. Docker 네트워크 생성
@@ -65,6 +77,17 @@ docker buildx build --platform linux/arm64 \
   -f redhat/Dockerfile.work \
   -t redhat-k8s-work .
 ```
+
+---
+
+## 전체 구성 흐름 요약
+
+1. Docker 네트워크 생성 (`k8s-net`)
+2. 마스터/워커 이미지 빌드
+3. 컨테이너 실행 및 고정 IP 할당
+4. `kubeadm init`으로 마스터 초기화
+5. CNI(Calico), MetalLB, Ingress 설치
+6. 워커 노드 Join
 
 ---
 
@@ -176,4 +199,3 @@ docker run -d --name k8s-worker1 \
         --discovery-token-ca-cert-hash sha256:<hash>
    
    ```
-
