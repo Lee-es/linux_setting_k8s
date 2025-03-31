@@ -10,7 +10,7 @@ fi
 # -------------------------------
 export ZSH="$HOME/.oh-my-zsh"
 export ZSH_CUSTOM="$ZSH/custom"
-export PATH="$HOME/.bin:$PATH"
+export PATH="$HOME/.local/bin:$HOME/.bin:$PATH"
 export EDITOR=nvim
 [[ -z "$DISPLAY" ]] && export DISPLAY=:0
 

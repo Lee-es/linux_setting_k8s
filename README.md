@@ -19,7 +19,7 @@
   OS | **MacOS Sequoia 15.4**
   Arch | **ARM64 (Apple Silicon)**
 
-> 실습 중 동일한 로컬 터미널 사용을 위해 Master-Node에 다음 툴을 설치합니다. (선택 사항)
+> 실습 중 로컬 동일한 터미널 환경 사용을 위해 Master-Node에 다음 툴을 설치합니다. (선택 사항)
   - `oh-my-zsh`: 사용자 친화적인 ZSH 쉘 환경
   - `LunarVim`: Neovim 기반의 경량 코드 편집기 (YAML에 적합)
 
@@ -122,6 +122,12 @@ docker run -d --name k8s-worker1 \
 
 ---
 
+### 컨테이너 터미널 접속 방법
+- master : `k8s-master` work: `k8s-workN` 
+```bash
+docker exec -it k8s-master zsh
+```
+---
 
 ### 4. Master-Node 환경 구성
 
